@@ -41,24 +41,20 @@ namespace DiscordCorpse
             if (m_Monitor != null)
                 m_Protocol.SetMonitor(m_Monitor);
             TCPAsyncClient discordGatewayClient = new(m_Protocol, URI.Parse(m_API.GetGatewayURL()));
-            discordGatewayClient.SetSelfReconnectionDelayAndMaxNbTry(TimeSpan.FromMilliseconds(200), 5);
-            discordGatewayClient.EnableSelfReconnection();
             discordGatewayClient.Start();
             m_Protocol.OnReconnectionRequested += OnReconnectionRequested;
         }
 
         private void OnReconnectionRequested()
         {
-            DiscordClientProtocol protocol = new(m_API, this);
-            protocol.SetSessionID(m_Protocol.SessionID);
-            URI uri = m_Protocol.URI;
             m_Protocol.Disconnect();
+            DiscordClientProtocol protocol = new(m_API, this);
+            protocol.SetReconnectionInfo(m_Protocol.SessionID, m_Protocol.LastSequenceNumber);
+            URI uri = m_Protocol.URI;
             m_Protocol = protocol;
             TCPAsyncClient discordGatewayClient = new(m_Protocol, uri);
             if (m_Monitor != null)
                 m_Protocol.SetMonitor(m_Monitor);
-            discordGatewayClient.SetSelfReconnectionDelayAndMaxNbTry(TimeSpan.FromMilliseconds(200), 5);
-            discordGatewayClient.EnableSelfReconnection();
             discordGatewayClient.Start();
             m_Protocol.OnReconnectionRequested += OnReconnectionRequested;
         }

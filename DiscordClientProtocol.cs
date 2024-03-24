@@ -119,8 +119,13 @@ namespace DiscordCorpse
 
         internal URI URI => m_URI;
         internal string SessionID => m_SessionID;
+        internal int? LastSequenceNumber => m_LastSequenceNumber;
 
-        internal void SetSessionID(string sessionID) => m_SessionID = sessionID;
+        internal void SetReconnectionInfo(string sessionID, int? lastSequenceNumber)
+        {
+            m_SessionID = sessionID;
+            m_LastSequenceNumber = lastSequenceNumber;
+        }
 
         public DiscordChannel GetChannel(string channelID)
         {
@@ -182,17 +187,14 @@ namespace DiscordCorpse
 
         private void HandleHello(GatewayEvent receivedEvent)
         {
-            if (string.IsNullOrEmpty(m_SessionID))
+            if (receivedEvent.Data is JsonObject helloData)
             {
-                if (receivedEvent.Data is JsonObject helloData)
-                {
-                    m_HeartbeatAction = new RecurringAction(helloData.Get<int>("heartbeat_interval")!);
-                    m_HeartbeatAction.OnUpdate += Heartbeat;
-                    m_Watch.Start();
-                    m_HeartbeatAction?.Start();
-                    Send(new GatewayEvent(1, m_LastSequenceNumber).ToString());
-                    Identify();
-                }
+                m_HeartbeatAction = new RecurringAction(helloData.Get<int>("heartbeat_interval")!);
+                m_HeartbeatAction.OnUpdate += Heartbeat;
+                m_Watch.Start();
+                m_HeartbeatAction?.Start();
+                Send(new GatewayEvent(1, m_LastSequenceNumber).ToString());
+                Identify();
             }
         }
 
