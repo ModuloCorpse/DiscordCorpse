@@ -24,8 +24,10 @@ namespace DiscordCorpse
             JsonHelper.RegisterSerializer(new DiscordEmbed.JsonSerializer());
         }
 
-        public static DiscordClient NewConnection(string clientSecret) => new(clientSecret, null);
-        public static DiscordClient NewConnection(string clientSecret, IDiscordHandler discordHandler) => new(clientSecret, discordHandler);
+        public static DiscordClient NewConnection(string clientSecret) => new(clientSecret, null, null);
+        public static DiscordClient NewConnection(string clientSecret, IDiscordHandler discordHandler) => new(clientSecret, discordHandler, null);
+        public static DiscordClient NewConnection(string clientSecret, IMonitor monitor) => new(clientSecret, null, monitor);
+        public static DiscordClient NewConnection(string clientSecret, IDiscordHandler discordHandler, IMonitor monitor) => new(clientSecret, discordHandler, monitor);
 
         private readonly DiscordAPI m_API;
         private readonly IDiscordHandler? m_DiscordHandler;
@@ -33,14 +35,15 @@ namespace DiscordCorpse
         private DiscordClientProtocol m_Protocol;
         private IMonitor? m_Monitor;
 
-        private DiscordClient(string clientSecret, IDiscordHandler? handler)
+        private DiscordClient(string clientSecret, IDiscordHandler? handler, IMonitor? monitor)
         {
             m_DiscordHandler = handler;
             m_API = new(clientSecret);
             m_Protocol = new(m_API, this);
+            m_Monitor = monitor;
+            TCPAsyncClient discordGatewayClient = new(m_Protocol, URI.Parse(m_API.GetGatewayURL()));
             if (m_Monitor != null)
                 m_Protocol.SetMonitor(m_Monitor);
-            TCPAsyncClient discordGatewayClient = new(m_Protocol, URI.Parse(m_API.GetGatewayURL()));
             discordGatewayClient.Start();
             m_Protocol.OnReconnectionRequested += OnReconnectionRequested;
         }
