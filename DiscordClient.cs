@@ -109,7 +109,8 @@ namespace DiscordCorpse
             string messageID = PostMessage(channelID, message);
             if (string.IsNullOrEmpty(messageID))
                 return false;
-            return m_API.CrossPostMessage(channelID, messageID);
+            m_API.CrossPostMessage(channelID, messageID);
+            return true;
         }
     }
 }

@@ -61,15 +61,9 @@ namespace DiscordCorpse
             return string.Empty;
         }
 
-        internal bool CrossPostMessage(string channelID, string messageID)
+        internal void CrossPostMessage(string channelID, string messageID)
         {
-            Response response = SendRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}/crosspost", channelID, messageID));
-            if (response.StatusCode == 200)
-            {
-                JsonObject jsonResponse = JsonParser.Parse(response.Body);
-                return jsonResponse.Get<string>("id")! == messageID;
-            }
-            return false;
+            SendWithoutResponseRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}/crosspost", channelID, messageID));
         }
 
         internal void SendMessageToChannel(string channelID, DiscordMessage message)
