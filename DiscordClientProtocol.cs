@@ -193,8 +193,11 @@ namespace DiscordCorpse
                 m_HeartbeatAction.OnUpdate += Heartbeat;
                 m_Watch.Start();
                 m_HeartbeatAction?.Start();
-                Send(new GatewayEvent(1, m_LastSequenceNumber).ToString());
-                Identify();
+                if (string.IsNullOrEmpty(m_SessionID)) //TODO
+                {
+                    Send(new GatewayEvent(1, m_LastSequenceNumber).ToString());
+                    Identify();
+                }
             }
         }
 
