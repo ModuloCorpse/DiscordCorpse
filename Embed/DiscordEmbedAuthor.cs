@@ -1,21 +1,21 @@
 ﻿using CorpseLib;
-using CorpseLib.Json;
+using CorpseLib.DataNotation;
 using CorpseLib.Network;
 
 namespace DiscordCorpse.Embed
 {
     public class DiscordEmbedAuthor(string name, URI? url, URI? iconURL, URI? proxyIconURL)
     {
-        public class JsonSerializer : AJsonSerializer<DiscordEmbedAuthor>
+        public class DataSerializer : ADataSerializer<DiscordEmbedAuthor>
         {
-            protected override OperationResult<DiscordEmbedAuthor> Deserialize(JsonObject reader)
+            protected override OperationResult<DiscordEmbedAuthor> Deserialize(DataObject reader)
             {
                 if (reader.TryGet("name", out string? name) && name != null)
                     return new(new(name, URI.NullParse(reader.GetOrDefault<string?>("url", null)), URI.NullParse(reader.GetOrDefault<string?>("icon_url", null)), URI.NullParse(reader.GetOrDefault<string?>("proxy_icon_url", null))));
                 return new("Deserialization error", "No name");
             }
 
-            protected override void Serialize(DiscordEmbedAuthor obj, JsonObject writer)
+            protected override void Serialize(DiscordEmbedAuthor obj, DataObject writer)
             {
                 writer["name"] = obj.m_Name;
                 if (obj.m_URL != null) writer["url"] = obj.m_URL;

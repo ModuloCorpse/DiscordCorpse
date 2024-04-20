@@ -1,5 +1,5 @@
 ﻿using CorpseLib;
-using CorpseLib.Json;
+using CorpseLib.DataNotation;
 using CorpseLib.Network;
 using DiscordCorpse.Embed;
 
@@ -7,9 +7,9 @@ namespace DiscordCorpse
 {
     public class DiscordEmbed
     {
-        public class JsonSerializer : AJsonSerializer<DiscordEmbed>
+        public class DataSerializer : ADataSerializer<DiscordEmbed>
         {
-            protected override OperationResult<DiscordEmbed> Deserialize(JsonObject reader)
+            protected override OperationResult<DiscordEmbed> Deserialize(DataObject reader)
             {
                 DiscordEmbed embed = new();
                 DiscordEmbedFooter? footer = reader.GetOrDefault<DiscordEmbedFooter?>("footer", null);
@@ -68,7 +68,7 @@ namespace DiscordCorpse
                 return new(embed);
             }
 
-            protected override void Serialize(DiscordEmbed obj, JsonObject writer)
+            protected override void Serialize(DiscordEmbed obj, DataObject writer)
             {
                 if (obj.m_Title != null) writer["title"] = obj.m_Title;
                 if (obj.m_Type != null) writer["type"] = obj.m_Type;

@@ -1,13 +1,13 @@
 ﻿using CorpseLib;
-using CorpseLib.Json;
+using CorpseLib.DataNotation;
 
 namespace DiscordCorpse
 {
     public class DiscordUser(string username, string id, string discriminator, bool isVerified, bool isMFAEnabled, bool isBot)
     {
-        public class JsonSerializer : AJsonSerializer<DiscordUser>
+        public class DataSerializer : ADataSerializer<DiscordUser>
         {
-            protected override OperationResult<DiscordUser> Deserialize(JsonObject reader)
+            protected override OperationResult<DiscordUser> Deserialize(DataObject reader)
             {
                 bool isVerified = reader.Get<bool>("verified")!;
                 string username = reader.Get<string>("username")!;
@@ -22,7 +22,7 @@ namespace DiscordCorpse
                 return new(new(username, id, discriminator, isVerified, isMFAEnabled, isBot));
             }
 
-            protected override void Serialize(DiscordUser obj, JsonObject writer)
+            protected override void Serialize(DiscordUser obj, DataObject writer)
             {
                 writer["verified"] = obj.IsVerified;
                 writer["username"] = obj.UserName;

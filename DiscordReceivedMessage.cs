@@ -1,4 +1,4 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
 
 namespace DiscordCorpse
 {
@@ -17,7 +17,7 @@ namespace DiscordCorpse
         public string Content => m_Content;
         public string Nonce => m_Nonce;
 
-        internal DiscordReceivedMessage(DiscordAPI api, DiscordChannel channel, JsonObject data)
+        internal DiscordReceivedMessage(DiscordAPI api, DiscordChannel channel, DataObject data)
         {
             m_API = api;
             m_Channel = channel;

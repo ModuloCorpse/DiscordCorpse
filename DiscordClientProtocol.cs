@@ -1,4 +1,5 @@
 ﻿using CorpseLib;
+using CorpseLib.DataNotation;
 using CorpseLib.Json;
 using CorpseLib.Logging;
 using CorpseLib.Network;
@@ -12,29 +13,29 @@ namespace DiscordCorpse
     {
         private class GatewayEvent
         {
-            private readonly JsonNode m_Data;
+            private readonly DataNode m_Data;
             private readonly string? m_Name = null;
             private readonly int? m_SequenceNumber = null;
             private readonly int m_OpCode;
 
             public int OpCode => m_OpCode;
-            public JsonNode Data => m_Data;
+            public DataNode Data => m_Data;
             public int SequenceNumber => (int)m_SequenceNumber!;
             public string EventName => m_Name!;
 
             public GatewayEvent(int opCode)
             {
                 m_OpCode = opCode;
-                m_Data = new JsonObject();
+                m_Data = new DataObject();
             }
 
             public GatewayEvent(int opCode, object? data)
             {
                 m_OpCode = opCode;
-                m_Data = JsonHelper.Cast(data);
+                m_Data = DataHelper.Cast(data);
             }
 
-            public GatewayEvent(int opCode, JsonNode data)
+            public GatewayEvent(int opCode, DataNode data)
             {
                 m_OpCode = opCode;
                 m_Data = data;
@@ -43,12 +44,12 @@ namespace DiscordCorpse
             public GatewayEvent(int opCode, object? data, int sequenceNumber, string name)
             {
                 m_OpCode = opCode;
-                m_Data = JsonHelper.Cast(data);
+                m_Data = DataHelper.Cast(data);
                 m_SequenceNumber = sequenceNumber;
                 m_Name = name;
             }
 
-            public GatewayEvent(int opCode, JsonNode data, int sequenceNumber, string name)
+            public GatewayEvent(int opCode, DataNode data, int sequenceNumber, string name)
             {
                 m_OpCode = opCode;
                 m_Data = data;
@@ -56,10 +57,10 @@ namespace DiscordCorpse
                 m_Name = name;
             }
 
-            public GatewayEvent(JsonObject json)
+            public GatewayEvent(DataObject json)
             {
                 m_OpCode = json.Get<int>("op")!;
-                m_Data = json.Get<JsonNode>("d")!;
+                m_Data = json.Get<DataNode>("d")!;
                 if (m_OpCode == 0)
                 {
                     m_SequenceNumber = json.Get<int>("s");
@@ -67,13 +68,13 @@ namespace DiscordCorpse
                 }
             }
 
-            public override string ToString() => new JsonObject()
+            public override string ToString() => JsonParser.NetStr(new DataObject()
             {
                 { "op", m_OpCode },
                 { "d", m_Data },
                 { "s", m_SequenceNumber },
                 { "t", m_Name }
-            }.ToNetworkString();
+            });
         }
 
         public static readonly Logger DISCORD_GATEWAY = new("[${d}-${M}-${y} ${h}:${m}:${s}.${ms}] ${log}") { new LogInFile("./log/${y}${M}${d}${h}-Discord.log") };
@@ -137,7 +138,7 @@ namespace DiscordCorpse
             return discordChannel;
         }
 
-        private void HandleReady(JsonObject data)
+        private void HandleReady(DataObject data)
         {
             DISCORD_GATEWAY.Log(string.Format("<=[READY] {0}", data));
             m_BotUser = data.Get<DiscordUser>("user");
@@ -146,7 +147,7 @@ namespace DiscordCorpse
             m_Client?.OnReady();
         }
 
-        private void HandleMessageCreate(JsonObject data)
+        private void HandleMessageCreate(DataObject data)
         {
             DISCORD_GATEWAY.Log(string.Format("<=[MESSAGE] {0}", data));
             DiscordChannel channel = GetChannel(data.Get<string>("channel_id")!);
@@ -162,8 +163,8 @@ namespace DiscordCorpse
             m_LastSequenceNumber = receivedEvent.SequenceNumber;
             switch (receivedEvent.EventName)
             {
-                case "READY": HandleReady((JsonObject)receivedEvent.Data); break;
-                case "MESSAGE_CREATE": HandleMessageCreate((JsonObject)receivedEvent.Data); break;
+                case "READY": HandleReady((DataObject)receivedEvent.Data); break;
+                case "MESSAGE_CREATE": HandleMessageCreate((DataObject)receivedEvent.Data); break;
                 case "RESUMED": DISCORD_GATEWAY.Log("Resumed"); break;
             }
             //TODO
@@ -171,10 +172,10 @@ namespace DiscordCorpse
 
         private void Identify()
         {
-            Send(new GatewayEvent(2, new JsonObject()
+            Send(new GatewayEvent(2, new DataObject()
             {
                 { "token", m_API.Token },
-                { "properties", new JsonObject()
+                { "properties", new DataObject()
                     {
                         { "os", Environment.OSVersion.VersionString },
                         { "browser", "DiscordCorpse" },
@@ -187,7 +188,7 @@ namespace DiscordCorpse
 
         private void HandleHello(GatewayEvent receivedEvent)
         {
-            if (receivedEvent.Data is JsonObject helloData)
+            if (receivedEvent.Data is DataObject helloData)
             {
                 m_HeartbeatAction = new RecurringAction(helloData.Get<int>("heartbeat_interval")!);
                 m_HeartbeatAction.OnUpdate += Heartbeat;
@@ -210,7 +211,7 @@ namespace DiscordCorpse
         protected override void OnWSMessage(string message)
         {
             DISCORD_GATEWAY.Log(string.Format("<= {0}", message));
-            JsonObject receivedEventJson = JsonParser.Parse(message);
+            DataObject receivedEventJson = JsonParser.Parse(message);
             GatewayEvent receivedEvent = new(receivedEventJson);
             switch (receivedEvent.OpCode)
             {
@@ -224,7 +225,10 @@ namespace DiscordCorpse
 
         public void SendMessage(string channelID, DiscordMessage message) => m_API.SendMessageToChannel(channelID, message);
 
-        protected override void OnDiscardException(Exception exception) {}
+        protected override void OnDiscardException(Exception exception)
+        {
+            DISCORD_GATEWAY.Log(exception.ToString());
+        }
 
         protected override void OnWSOpen(Response message)
         {
@@ -232,7 +236,7 @@ namespace DiscordCorpse
             base.OnWSOpen(message);
             if (!string.IsNullOrEmpty(m_SessionID))
             {
-                Send(new GatewayEvent(6, new JsonObject()
+                Send(new GatewayEvent(6, new DataObject()
                 {
                     { "token", m_API.Token },
                     { "session_id", m_SessionID },
@@ -257,5 +261,7 @@ namespace DiscordCorpse
             if (status == 1001)
                 Reconnect();
         }
+
+
     }
 }

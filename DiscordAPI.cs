@@ -1,4 +1,5 @@
-﻿using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
+using CorpseLib.Json;
 using CorpseLib.Logging;
 using CorpseLib.Network;
 using CorpseLib.Web;
@@ -32,16 +33,16 @@ namespace DiscordCorpse
             return response;
         }
 
-        private void SendWithoutResponseRequest(Request.MethodType method, string url, JsonObject content)
+        private void SendWithoutResponseRequest(Request.MethodType method, string url, DataObject content)
         {
-            URLRequest request = new(URI.Parse(url), method, content.ToNetworkString());
+            URLRequest request = new(URI.Parse(url), method, JsonParser.NetStr(content));
             request.AddContentType(MIME.APPLICATION.JSON);
             SendWithoutResponseComposedRequest(request);
         }
 
-        private Response SendRequest(Request.MethodType method, string url, JsonObject content)
+        private Response SendRequest(Request.MethodType method, string url, DataObject content)
         {
-            URLRequest request = new(URI.Parse(url), method, content.ToNetworkString());
+            URLRequest request = new(URI.Parse(url), method, JsonParser.NetStr(content));
             request.AddContentType(MIME.APPLICATION.JSON);
             return SendComposedRequest(request);
         }
@@ -55,7 +56,7 @@ namespace DiscordCorpse
             Response response = SendRequest(Request.MethodType.GET, "https://discordapp.com/api/gateway");
             if (response.StatusCode == 200)
             {
-                JsonObject jsonResponse = JsonParser.Parse(response.Body);
+                DataObject jsonResponse = JsonParser.Parse(response.Body);
                 return jsonResponse.Get<string>("url")!;
             }
             return string.Empty;

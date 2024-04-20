@@ -1,13 +1,13 @@
 ﻿using CorpseLib;
-using CorpseLib.Json;
+using CorpseLib.DataNotation;
 
 namespace DiscordCorpse
 {
     public class DiscordAuthor
     {
-        public class JsonSerializer : AJsonSerializer<DiscordAuthor>
+        public class DataSerializer : ADataSerializer<DiscordAuthor>
         {
-            protected override OperationResult<DiscordAuthor> Deserialize(JsonObject reader)
+            protected override OperationResult<DiscordAuthor> Deserialize(DataObject reader)
             {
                 string username = reader.Get<string>("username")!;
                 int publicFlags = reader.GetOrDefault("public_flags", -1);
@@ -19,7 +19,7 @@ namespace DiscordCorpse
                 return new(new(username, id, globalName, discriminator, avatar, publicFlags));
             }
 
-            protected override void Serialize(DiscordAuthor obj, JsonObject writer)
+            protected override void Serialize(DiscordAuthor obj, DataObject writer)
             {
                 writer["username"] = obj.UserName;
                 writer["public_flags"] = obj.PublicFlags;

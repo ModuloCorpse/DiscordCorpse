@@ -4,6 +4,7 @@ using CorpseLib.Network;
 using DiscordCorpse.Embed;
 using DiscordCorpse.MessagePart.Text;
 using DiscordCorpse.MessagePart;
+using CorpseLib.DataNotation;
 
 namespace DiscordCorpse
 {
@@ -11,17 +12,17 @@ namespace DiscordCorpse
     {
         static DiscordClient()
         {
-            JsonHelper.RegisterSerializer(new DiscordAuthor.JsonSerializer());
-            JsonHelper.RegisterSerializer(new DiscordUser.JsonSerializer());
+            DataHelper.RegisterSerializer(new DiscordAuthor.DataSerializer());
+            DataHelper.RegisterSerializer(new DiscordUser.DataSerializer());
             //Embed
-            JsonHelper.RegisterSerializer(new DiscordEmbedAuthor.JsonSerializer());
-            JsonHelper.RegisterSerializer(new DiscordEmbedField.JsonSerializer());
-            JsonHelper.RegisterSerializer(new DiscordEmbedFooter.JsonSerializer());
-            JsonHelper.RegisterSerializer(new DiscordEmbedImage.JsonSerializer());
-            JsonHelper.RegisterSerializer(new DiscordEmbedProvider.JsonSerializer());
-            JsonHelper.RegisterSerializer(new DiscordEmbedThumbnail.JsonSerializer());
-            JsonHelper.RegisterSerializer(new DiscordEmbedVideo.JsonSerializer());
-            JsonHelper.RegisterSerializer(new DiscordEmbed.JsonSerializer());
+            DataHelper.RegisterSerializer(new DiscordEmbedAuthor.DataSerializer());
+            DataHelper.RegisterSerializer(new DiscordEmbedField.DataSerializer());
+            DataHelper.RegisterSerializer(new DiscordEmbedFooter.DataSerializer());
+            DataHelper.RegisterSerializer(new DiscordEmbedImage.DataSerializer());
+            DataHelper.RegisterSerializer(new DiscordEmbedProvider.DataSerializer());
+            DataHelper.RegisterSerializer(new DiscordEmbedThumbnail.DataSerializer());
+            DataHelper.RegisterSerializer(new DiscordEmbedVideo.DataSerializer());
+            DataHelper.RegisterSerializer(new DiscordEmbed.DataSerializer());
         }
 
         public static DiscordClient NewConnection(string clientSecret) => new(clientSecret, null, null);
@@ -112,5 +113,7 @@ namespace DiscordCorpse
             m_API.CrossPostMessage(channelID, messageID);
             return true;
         }
+
+        public bool IsConnected() => m_Protocol.IsConnected();
     }
 }

@@ -1,21 +1,21 @@
-﻿using CorpseLib.Json;
-using CorpseLib.Network;
+﻿using CorpseLib.Network;
 using CorpseLib;
+using CorpseLib.DataNotation;
 
 namespace DiscordCorpse.Embed
 {
     public class DiscordEmbedThumbnail(URI url, URI? proxyURL, int? width, int? height)
     {
-        public class JsonSerializer : AJsonSerializer<DiscordEmbedThumbnail>
+        public class DataSerializer : ADataSerializer<DiscordEmbedThumbnail>
         {
-            protected override OperationResult<DiscordEmbedThumbnail> Deserialize(JsonObject reader)
+            protected override OperationResult<DiscordEmbedThumbnail> Deserialize(DataObject reader)
             {
                 if (reader.TryGet("url", out string? url) && url != null)
                     return new(new(URI.Parse(url), URI.NullParse(reader.GetOrDefault<string?>("proxy_url", null)), reader.GetOrDefault<int?>("width", null), reader.GetOrDefault<int?>("height", null)));
                 return new("Deserialization error", "No url");
             }
 
-            protected override void Serialize(DiscordEmbedThumbnail obj, JsonObject writer)
+            protected override void Serialize(DiscordEmbedThumbnail obj, DataObject writer)
             {
                 writer["url"] = obj.m_URL;
                 if (obj.m_ProxyURL != null) writer["proxy_url"] = obj.m_ProxyURL;

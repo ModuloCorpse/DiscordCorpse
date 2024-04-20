@@ -1,5 +1,4 @@
-﻿using CorpseLib;
-using CorpseLib.Json;
+﻿using CorpseLib.DataNotation;
 using DiscordCorpse.MessagePart;
 using System.Collections;
 using System.Text;
@@ -20,9 +19,9 @@ namespace DiscordCorpse
         public IEnumerator<IDiscordMessagePart> GetEnumerator() => ((IEnumerable<IDiscordMessagePart>)m_Parts).GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)m_Parts).GetEnumerator();
 
-        public JsonObject Serialize()
+        public DataObject Serialize()
         {
-            JsonObject serialized = [];
+            DataObject serialized = [];
             if (m_Parts.Count > 0)
             {
                 StringBuilder contentBuilder = new();

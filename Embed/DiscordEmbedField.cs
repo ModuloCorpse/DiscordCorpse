@@ -1,13 +1,13 @@
 ﻿using CorpseLib;
-using CorpseLib.Json;
+using CorpseLib.DataNotation;
 
 namespace DiscordCorpse.Embed
 {
     public class DiscordEmbedField(string name, string value, bool? inline = null)
     {
-        public class JsonSerializer : AJsonSerializer<DiscordEmbedField>
+        public class DataSerializer : ADataSerializer<DiscordEmbedField>
         {
-            protected override OperationResult<DiscordEmbedField> Deserialize(JsonObject reader)
+            protected override OperationResult<DiscordEmbedField> Deserialize(DataObject reader)
             {
                 if (reader.TryGet("name", out string? name) && name != null &&
                     reader.TryGet("value", out string? value) && value != null)
@@ -15,7 +15,7 @@ namespace DiscordCorpse.Embed
                 return new("Deserialization error", "No name or value");
             }
 
-            protected override void Serialize(DiscordEmbedField obj, JsonObject writer)
+            protected override void Serialize(DiscordEmbedField obj, DataObject writer)
             {
                 writer["name"] = obj.m_Name;
                 writer["value"] = obj.m_Value;
