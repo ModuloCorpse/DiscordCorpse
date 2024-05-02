@@ -1,5 +1,4 @@
 ﻿using CorpseLib;
-using CorpseLib.Json;
 using CorpseLib.Network;
 using DiscordCorpse.Embed;
 using DiscordCorpse.MessagePart.Text;
@@ -115,5 +114,9 @@ namespace DiscordCorpse
         }
 
         public bool IsConnected() => m_Protocol.IsConnected();
+
+        public void Reconnect() => OnReconnectionRequested();
+
+        public bool IsReconnecting() => m_Protocol.IsReconnecting();
     }
 }
