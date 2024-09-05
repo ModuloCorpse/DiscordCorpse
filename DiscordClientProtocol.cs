@@ -108,7 +108,6 @@ namespace DiscordCorpse
 
         private readonly DiscordClient m_Client = client;
         private RecurringAction? m_HeartbeatAction;
-        private readonly Stopwatch m_Watch = new();
         private readonly DiscordAPI m_API = api;
         private readonly Dictionary<string, DiscordChannel> m_Channels = [];
         private DiscordUser? m_BotUser = null;
@@ -140,7 +139,7 @@ namespace DiscordCorpse
 
         private void HandleReady(DataObject data)
         {
-            DISCORD_GATEWAY.Log(string.Format("<=[READY] {0}", data));
+            DISCORD_GATEWAY.Log(string.Format("<=[READY] {0}", JsonParser.NetStr(data)));
             m_BotUser = data.Get<DiscordUser>("user");
             m_SessionID = data.Get<string>("session_id")!;
             m_URI = URI.Parse(data.Get<string>("resume_gateway_url")!);
@@ -149,7 +148,7 @@ namespace DiscordCorpse
 
         private void HandleMessageCreate(DataObject data)
         {
-            DISCORD_GATEWAY.Log(string.Format("<=[MESSAGE] {0}", data));
+            DISCORD_GATEWAY.Log(string.Format("<=[MESSAGE] {0}", JsonParser.NetStr(data)));
             DiscordChannel channel = GetChannel(data.Get<string>("channel_id")!);
             DiscordReceivedMessage message = new(m_API, channel, data);
             if (m_BotUser?.ID != message.Author.ID)
@@ -190,11 +189,12 @@ namespace DiscordCorpse
         {
             if (receivedEvent.Data is DataObject helloData)
             {
+                m_HeartbeatAction?.Stop();
                 m_HeartbeatAction = new RecurringAction(helloData.Get<int>("heartbeat_interval")!);
                 m_HeartbeatAction.OnUpdate += Heartbeat;
-                m_Watch.Start();
                 m_HeartbeatAction?.Start();
-                if (string.IsNullOrEmpty(m_SessionID)) //TODO
+
+                if (string.IsNullOrEmpty(m_SessionID))
                 {
                     Send(new GatewayEvent(1, m_LastSequenceNumber).ToString());
                     Identify();
@@ -211,15 +211,23 @@ namespace DiscordCorpse
         protected override void OnWSMessage(string message)
         {
             DISCORD_GATEWAY.Log(string.Format("<= {0}", message));
-            DataObject receivedEventJson = JsonParser.Parse(message);
-            GatewayEvent receivedEvent = new(receivedEventJson);
-            switch (receivedEvent.OpCode)
+            try
             {
-                case 0: HandleDispatch(receivedEvent); break;
-                case 7: OnReconnectionRequested?.Invoke(); break;
-                case 9: /* Handle Invalid Session */ break;
-                case 10: HandleHello(receivedEvent); break;
-                case 11: break; // Heartbeat ACK DISCARDED
+                DataObject receivedEventJson = JsonParser.Parse(message);
+                GatewayEvent receivedEvent = new(receivedEventJson);
+                switch (receivedEvent.OpCode)
+                {
+                    case 0: HandleDispatch(receivedEvent); break;
+                    case 7: OnReconnectionRequested?.Invoke(); break;
+                    case 9: /* Handle Invalid Session */ break;
+                    case 10: HandleHello(receivedEvent); break;
+                    case 11: break; // Heartbeat ACK DISCARDED
+                }
+            }
+            catch
+            {
+                DISCORD_GATEWAY.Log(string.Format("<= [DEBUG] CHECK NEXT MESSAGE TO SEE IF IT COMPLETE PREVIOUS ONE", message));
+                //TODO Store fragmented json to get full json
             }
         }
 
@@ -242,7 +250,6 @@ namespace DiscordCorpse
                     { "session_id", m_SessionID },
                     { "seq", m_LastSequenceNumber }
                 }).ToString());
-                m_Watch.Restart();
                 m_HeartbeatAction?.Start();
                 DISCORD_GATEWAY.Log("Reconnected");
             }
@@ -250,18 +257,18 @@ namespace DiscordCorpse
 
         protected override void OnClientDisconnected()
         {
+            //TODO Check why action isn't stopped properly
             m_HeartbeatAction?.Stop();
             DISCORD_GATEWAY.Log("Disconnected");
         }
 
         protected override void OnWSClose(int status, string message)
         {
+            //TODO Check why acrion isn't stopped properly
             m_HeartbeatAction?.Stop();
             DISCORD_GATEWAY.Log(string.Format("[{0}] {1}", status, message));
             if (status == 1001)
                 Reconnect();
         }
-
-
     }
 }
