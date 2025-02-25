@@ -82,9 +82,9 @@ namespace DiscordCorpse
 
         public DiscordChannel GetChannel(string channelID) => m_Protocol.GetChannel(channelID);
         public void SendMessage(string channelID, DiscordMessage message) => m_Protocol.SendMessage(channelID, message);
-        public void SendMessage(string channelID, string message) => SendMessage(channelID, new DiscordMessage() { new DiscordText() { new DiscordFormatedText(message) } });
+        public void SendMessage(string channelID, string message) => SendMessage(channelID, [new DiscordText() { new DiscordFormatedText(message) }]);
 
-        public string PostMessage(string channelID, string message) => PostMessage(channelID, new DiscordMessage() { new DiscordText() { new DiscordFormatedText(message) } });
+        public string PostMessage(string channelID, string message) => PostMessage(channelID, [new DiscordText() { new DiscordFormatedText(message) }]);
         public string PostMessage(string channelID, DiscordMessage message)
         {
             string nonce = Guid.NewGuid().ToString().Replace("-", "")[..25];
@@ -92,7 +92,7 @@ namespace DiscordCorpse
             Operation<DiscordReceivedMessage> awaitOperation = new();
             m_AwaitingMessage[nonce] = awaitOperation;
             SendMessage(channelID, message);
-            if (awaitOperation.Wait())
+            if (awaitOperation.Wait(TimeSpan.FromSeconds(5)))
             {
                 OperationResult<DiscordReceivedMessage> receivedMessage = awaitOperation.Result;
                 m_AwaitingMessage.Remove(nonce);
@@ -103,7 +103,7 @@ namespace DiscordCorpse
             return string.Empty;
         }
 
-        public bool CrossPostMessage(string channelID, string message) => CrossPostMessage(channelID, new DiscordMessage() { new DiscordText() { new DiscordFormatedText(message) } });
+        public bool CrossPostMessage(string channelID, string message) => CrossPostMessage(channelID, [new DiscordText() { new DiscordFormatedText(message) }]);
         public bool CrossPostMessage(string channelID, DiscordMessage message)
         {
             string messageID = PostMessage(channelID, message);

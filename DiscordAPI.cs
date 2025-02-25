@@ -17,7 +17,7 @@ namespace DiscordCorpse
 
         internal string Token => m_AccessToken;
 
-        private void SendWithoutResponseComposedRequest(URLRequest request)
+        private void SendComposedRequestWithoutResponse(URLRequest request)
         {
             request.AddHeaderField("Authorization", string.Format("Bot {0}", m_AccessToken));
             DISCORD_API.Log(string.Format("Sending: {0}", request.Request.ToString()));
@@ -33,11 +33,11 @@ namespace DiscordCorpse
             return response;
         }
 
-        private void SendWithoutResponseRequest(Request.MethodType method, string url, DataObject content)
+        private void SendRequestWithoutResponse(Request.MethodType method, string url, DataObject content)
         {
             URLRequest request = new(URI.Parse(url), method, JsonParser.NetStr(content));
             request.AddContentType(MIME.APPLICATION.JSON);
-            SendWithoutResponseComposedRequest(request);
+            SendComposedRequestWithoutResponse(request);
         }
 
         private Response SendRequest(Request.MethodType method, string url, DataObject content)
@@ -47,7 +47,7 @@ namespace DiscordCorpse
             return SendComposedRequest(request);
         }
 
-        private void SendWithoutResponseRequest(Request.MethodType method, string url) => SendWithoutResponseComposedRequest(new(URI.Parse(url), method));
+        private void SendRequestWithoutResponse(Request.MethodType method, string url) => SendComposedRequestWithoutResponse(new(URI.Parse(url), method));
 
         private Response SendRequest(Request.MethodType method, string url) => SendComposedRequest(new(URI.Parse(url), method));
 
@@ -64,17 +64,17 @@ namespace DiscordCorpse
 
         internal void CrossPostMessage(string channelID, string messageID)
         {
-            SendWithoutResponseRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}/crosspost", channelID, messageID));
+            SendRequestWithoutResponse(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}/crosspost", channelID, messageID));
         }
 
         internal void SendMessageToChannel(string channelID, DiscordMessage message)
         {
-            SendWithoutResponseRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages", channelID), message.Serialize());
+            SendRequestWithoutResponse(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages", channelID), message.Serialize());
         }
 
         internal void DeleteMessage(string channelID, string messageID)
         {
-            SendWithoutResponseRequest(Request.MethodType.DELETE, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}", channelID, messageID));
+            SendRequestWithoutResponse(Request.MethodType.DELETE, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}", channelID, messageID));
         }
     }
 }

@@ -6,6 +6,7 @@ using CorpseLib.Network;
 using CorpseLib.Web;
 using CorpseLib.Web.Http;
 using System.Diagnostics;
+using System.Text;
 
 namespace DiscordCorpse
 {
@@ -113,6 +114,7 @@ namespace DiscordCorpse
         private DiscordUser? m_BotUser = null;
         private URI m_URI = URI.Parse(api.GetGatewayURL());
         private string m_SessionID = string.Empty;
+        private string m_LastMessageFragment = string.Empty;
         private int? m_LastSequenceNumber = null;
 
         internal event ReconnectionDelegate? OnReconnectionRequested;
@@ -210,10 +212,12 @@ namespace DiscordCorpse
 
         protected override void OnWSMessage(string message)
         {
-            DISCORD_GATEWAY.Log(string.Format("<= {0}", message));
+            string messageWithFragment = m_LastMessageFragment + message;
+            DISCORD_GATEWAY.Log(string.Format("<= {0}", messageWithFragment));
             try
             {
-                DataObject receivedEventJson = JsonParser.Parse(message);
+                DataObject receivedEventJson = JsonParser.Parse(messageWithFragment);
+                m_LastMessageFragment = string.Empty;
                 GatewayEvent receivedEvent = new(receivedEventJson);
                 switch (receivedEvent.OpCode)
                 {
@@ -226,8 +230,7 @@ namespace DiscordCorpse
             }
             catch
             {
-                DISCORD_GATEWAY.Log(string.Format("<= [DEBUG] CHECK NEXT MESSAGE TO SEE IF IT COMPLETE PREVIOUS ONE", message));
-                //TODO Store fragmented json to get full json
+                m_LastMessageFragment = messageWithFragment;
             }
         }
 
@@ -257,6 +260,16 @@ namespace DiscordCorpse
 
         protected override void OnClientDisconnected()
         {
+            StringBuilder builder = new();
+            foreach (string traceLine in Environment.StackTrace.Split('\n'))
+            {
+                string trace = traceLine.Trim();
+                if (!string.IsNullOrEmpty(trace) && !trace.Contains("at System.Environment.get_StackTrace()"))
+                    builder.AppendLine(trace);
+            }
+            DISCORD_GATEWAY.Log("Disconnection trace");
+            DISCORD_GATEWAY.Log(builder.ToString());
+
             //TODO Check why action isn't stopped properly
             m_HeartbeatAction?.Stop();
             DISCORD_GATEWAY.Log("Disconnected");
