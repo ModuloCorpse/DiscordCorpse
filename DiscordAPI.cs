@@ -17,16 +17,22 @@ namespace DiscordCorpse
 
         internal string Token => m_AccessToken;
 
-        private void SendComposedRequestWithoutResponse(URLRequest request)
+        private void FillHeader(URLRequest request)
         {
             request.AddHeaderField("Authorization", string.Format("Bot {0}", m_AccessToken));
+            request.AddHeaderField("User-Agent", string.Format("DiscordBot (https://github.com/ModuloCorpse/DiscordCorpse, {0})", "1.0.0-alpha"));
+        }
+
+        private void SendComposedRequestWithoutResponse(URLRequest request)
+        {
+            FillHeader(request);
             DISCORD_API.Log(string.Format("Sending: {0}", request.Request.ToString()));
             request.SendWithoutResponse();
         }
 
         private Response SendComposedRequest(URLRequest request)
         {
-            request.AddHeaderField("Authorization", string.Format("Bot {0}", m_AccessToken));
+            FillHeader(request);
             DISCORD_API.Log(string.Format("Sending: {0}", request.Request.ToString()));
             Response response = request.Send();
             DISCORD_API.Log(string.Format("Received: {0}", response.ToString()));
@@ -64,17 +70,17 @@ namespace DiscordCorpse
 
         internal void CrossPostMessage(string channelID, string messageID)
         {
-            SendRequestWithoutResponse(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}/crosspost", channelID, messageID));
+            SendRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}/crosspost", channelID, messageID));
         }
 
         internal void SendMessageToChannel(string channelID, DiscordMessage message)
         {
-            SendRequestWithoutResponse(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages", channelID), message.Serialize());
+            SendRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages", channelID), message.Serialize());
         }
 
         internal void DeleteMessage(string channelID, string messageID)
         {
-            SendRequestWithoutResponse(Request.MethodType.DELETE, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}", channelID, messageID));
+            SendRequest(Request.MethodType.DELETE, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}", channelID, messageID));
         }
     }
 }
