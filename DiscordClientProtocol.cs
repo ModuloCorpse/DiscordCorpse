@@ -5,7 +5,6 @@ using CorpseLib.Logging;
 using CorpseLib.Network;
 using CorpseLib.Web;
 using CorpseLib.Web.Http;
-using System.Diagnostics;
 using System.Text;
 
 namespace DiscordCorpse

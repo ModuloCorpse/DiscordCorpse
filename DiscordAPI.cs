@@ -19,15 +19,10 @@ namespace DiscordCorpse
 
         private void FillHeader(URLRequest request)
         {
+            request.SetMonitor(new FullDebugLogMonitor(DISCORD_API));
+            request.AddHeaderField("Accept", MIME.APPLICATION.JSON.ToString());
             request.AddHeaderField("Authorization", string.Format("Bot {0}", m_AccessToken));
-            request.AddHeaderField("User-Agent", string.Format("DiscordBot (https://github.com/ModuloCorpse/DiscordCorpse, {0})", "1.0.0-alpha"));
-        }
-
-        private void SendComposedRequestWithoutResponse(URLRequest request)
-        {
-            FillHeader(request);
-            DISCORD_API.Log(string.Format("Sending: {0}", request.Request.ToString()));
-            request.SendWithoutResponse();
+            request.AddHeaderField("User-Agent", string.Format("DiscordCorpse (https://github.com/ModuloCorpse/DiscordCorpse, {0})", LibInfo.VERSION.ToString()));
         }
 
         private Response SendComposedRequest(URLRequest request)
@@ -39,21 +34,12 @@ namespace DiscordCorpse
             return response;
         }
 
-        private void SendRequestWithoutResponse(Request.MethodType method, string url, DataObject content)
-        {
-            URLRequest request = new(URI.Parse(url), method, JsonParser.NetStr(content));
-            request.AddContentType(MIME.APPLICATION.JSON);
-            SendComposedRequestWithoutResponse(request);
-        }
-
         private Response SendRequest(Request.MethodType method, string url, DataObject content)
         {
             URLRequest request = new(URI.Parse(url), method, JsonParser.NetStr(content));
             request.AddContentType(MIME.APPLICATION.JSON);
             return SendComposedRequest(request);
         }
-
-        private void SendRequestWithoutResponse(Request.MethodType method, string url) => SendComposedRequestWithoutResponse(new(URI.Parse(url), method));
 
         private Response SendRequest(Request.MethodType method, string url) => SendComposedRequest(new(URI.Parse(url), method));
 
@@ -68,14 +54,22 @@ namespace DiscordCorpse
             return string.Empty;
         }
 
-        internal void CrossPostMessage(string channelID, string messageID)
-        {
-            SendRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}/crosspost", channelID, messageID));
-        }
-
         internal void SendMessageToChannel(string channelID, DiscordMessage message)
         {
             SendRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages", channelID), message.Serialize());
+        }
+
+        internal bool CrossPostMessage(string channelID, DiscordMessage message)
+        {
+            Response response = SendRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages", channelID), message.Serialize());
+            if (response.StatusCode == 200)
+            {
+                DataObject jsonResponse = JsonParser.Parse(response.Body);
+                string messageID =  jsonResponse.Get<string>("id")!;
+                Response crosspostResponse = SendRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}/crosspost", channelID, messageID));
+                return crosspostResponse.StatusCode == 200;
+            }
+            return false;
         }
 
         internal void DeleteMessage(string channelID, string messageID)

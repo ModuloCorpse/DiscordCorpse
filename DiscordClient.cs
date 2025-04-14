@@ -104,14 +104,7 @@ namespace DiscordCorpse
         }
 
         public bool CrossPostMessage(string channelID, string message) => CrossPostMessage(channelID, [new DiscordText() { new DiscordFormatedText(message) }]);
-        public bool CrossPostMessage(string channelID, DiscordMessage message)
-        {
-            string messageID = PostMessage(channelID, message);
-            if (string.IsNullOrEmpty(messageID))
-                return false;
-            m_API.CrossPostMessage(channelID, messageID);
-            return true;
-        }
+        public bool CrossPostMessage(string channelID, DiscordMessage message) => m_API.CrossPostMessage(channelID, message);
 
         public bool IsConnected() => m_Protocol.IsConnected();
 
