@@ -28,9 +28,9 @@ namespace DiscordCorpse
         private Response SendComposedRequest(URLRequest request)
         {
             FillHeader(request);
-            DISCORD_API.Log(string.Format("Sending: {0}", request.Request.ToString()));
+            DISCORD_API.Log("Sending: ${0}", request.Request.ToString());
             Response response = request.Send();
-            DISCORD_API.Log(string.Format("Received: {0}", response.ToString()));
+            DISCORD_API.Log("Received: ${0}", response.ToString());
             return response;
         }
 

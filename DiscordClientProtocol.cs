@@ -132,7 +132,6 @@ namespace DiscordCorpse
         {
             if (m_Channels.TryGetValue(channelID, out var channel))
                 return channel;
-            //TODO
             DiscordChannel discordChannel = new(m_Client, channelID);
             m_Channels.Add(channelID, discordChannel);
             return discordChannel;
@@ -167,7 +166,6 @@ namespace DiscordCorpse
                 case "MESSAGE_CREATE": HandleMessageCreate((DataObject)receivedEvent.Data); break;
                 case "RESUMED": DISCORD_GATEWAY.Log("Resumed"); break;
             }
-            //TODO
         }
 
         private void Identify()
@@ -276,7 +274,7 @@ namespace DiscordCorpse
 
         protected override void OnWSClose(int status, string message)
         {
-            //TODO Check why acrion isn't stopped properly
+            //TODO Check why action isn't stopped properly
             m_HeartbeatAction?.Stop();
             DISCORD_GATEWAY.Log(string.Format("[{0}] {1}", status, message));
             if (status == 1001)
