@@ -139,7 +139,7 @@ namespace DiscordCorpse
 
         private void HandleReady(DataObject data)
         {
-            DISCORD_GATEWAY.Log(string.Format("<=[READY] {0}", JsonParser.NetStr(data)));
+            DISCORD_GATEWAY.Log($"<=[READY] {JsonParser.NetStr(data)}");
             m_BotUser = data.Get<DiscordUser>("user");
             m_SessionID = data.Get<string>("session_id")!;
             m_URI = URI.Parse(data.Get<string>("resume_gateway_url")!);
@@ -148,7 +148,7 @@ namespace DiscordCorpse
 
         private void HandleMessageCreate(DataObject data)
         {
-            DISCORD_GATEWAY.Log(string.Format("<=[MESSAGE] {0}", JsonParser.NetStr(data)));
+            DISCORD_GATEWAY.Log($"<=[MESSAGE] {JsonParser.NetStr(data)}");
             DiscordChannel channel = GetChannel(data.Get<string>("channel_id")!);
             DiscordReceivedMessage message = new(m_API, channel, data);
             if (m_BotUser?.ID != message.Author.ID)
@@ -210,7 +210,7 @@ namespace DiscordCorpse
         protected override void OnWSMessage(string message)
         {
             string messageWithFragment = m_LastMessageFragment + message;
-            DISCORD_GATEWAY.Log(string.Format("<= {0}", messageWithFragment));
+            DISCORD_GATEWAY.Log($"<= ${messageWithFragment}");
             try
             {
                 DataObject receivedEventJson = JsonParser.Parse(messageWithFragment);
@@ -276,7 +276,7 @@ namespace DiscordCorpse
         {
             //TODO Check why action isn't stopped properly
             m_HeartbeatAction?.Stop();
-            DISCORD_GATEWAY.Log(string.Format("[{0}] {1}", status, message));
+            DISCORD_GATEWAY.Log($"[${status}] ${message}");
             if (status == 1001)
                 Reconnect();
         }

@@ -21,8 +21,8 @@ namespace DiscordCorpse
         {
             request.SetMonitor(new FullDebugLogMonitor(DISCORD_API));
             request.AddHeaderField("Accept", MIME.APPLICATION.JSON.ToString());
-            request.AddHeaderField("Authorization", string.Format("Bot {0}", m_AccessToken));
-            request.AddHeaderField("User-Agent", string.Format("DiscordCorpse (https://github.com/ModuloCorpse/DiscordCorpse, {0})", LibInfo.VERSION.ToString()));
+            request.AddHeaderField("Authorization", $"Bot {m_AccessToken}");
+            request.AddHeaderField("User-Agent", $"DiscordCorpse (https://github.com/ModuloCorpse/DiscordCorpse, {LibInfo.VERSION})");
         }
 
         private Response SendComposedRequest(URLRequest request)
@@ -56,17 +56,17 @@ namespace DiscordCorpse
 
         internal void SendMessageToChannel(string channelID, DiscordMessage message)
         {
-            SendRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages", channelID), message.Serialize());
+            SendRequest(Request.MethodType.POST, $"https://discordapp.com/api/channels/{channelID}/messages", message.Serialize());
         }
 
         internal bool CrossPostMessage(string channelID, DiscordMessage message)
         {
-            Response response = SendRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages", channelID), message.Serialize());
+            Response response = SendRequest(Request.MethodType.POST, $"https://discordapp.com/api/channels/{channelID}/messages", message.Serialize());
             if (response.StatusCode == 200)
             {
                 DataObject jsonResponse = JsonParser.Parse(response.Body);
                 string messageID =  jsonResponse.Get<string>("id")!;
-                Response crosspostResponse = SendRequest(Request.MethodType.POST, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}/crosspost", channelID, messageID));
+                Response crosspostResponse = SendRequest(Request.MethodType.POST, $"https://discordapp.com/api/channels/{channelID}/messages/{messageID}/crosspost");
                 return crosspostResponse.StatusCode == 200;
             }
             return false;
@@ -74,7 +74,7 @@ namespace DiscordCorpse
 
         internal void DeleteMessage(string channelID, string messageID)
         {
-            SendRequest(Request.MethodType.DELETE, string.Format("https://discordapp.com/api/channels/{0}/messages/{1}", channelID, messageID));
+            SendRequest(Request.MethodType.DELETE, $"https://discordapp.com/api/channels/{channelID}/messages/{messageID}");
         }
     }
 }

@@ -18,7 +18,7 @@ namespace DiscordCorpse.MessagePart
                 for (int i = 0; i != indent; i++)
                     builder.Append(' ');
                 if (isOrdered)
-                    builder.Append(string.Format("{0}. ", pos));
+                    builder.Append($"{pos}. ");
                 else
                     builder.Append("- ");
                 builder.Append(m_Text.GetPart());
