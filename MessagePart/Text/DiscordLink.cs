@@ -1,4 +1,4 @@
-﻿using CorpseLib.Network;
+﻿using CorpseLib;
 using System.Text;
 
 namespace DiscordCorpse.MessagePart.Text

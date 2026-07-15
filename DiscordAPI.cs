@@ -1,9 +1,9 @@
-﻿using CorpseLib.DataNotation;
+﻿using CorpseLib;
+using CorpseLib.DataNotation;
 using CorpseLib.Json;
 using CorpseLib.Logging;
 using CorpseLib.Network;
-using CorpseLib.Web;
-using CorpseLib.Web.Http;
+using CorpseLib.Network.Http;
 
 namespace DiscordCorpse
 {
@@ -19,7 +19,8 @@ namespace DiscordCorpse
 
         private void FillHeader(URLRequest request)
         {
-            request.SetMonitor(new FullDebugLogMonitor(DISCORD_API));
+            //TODO
+            //request.SetMonitor(new FullDebugLogMonitor(DISCORD_API));
             request.AddHeaderField("Accept", MIME.APPLICATION.JSON.ToString());
             request.AddHeaderField("Authorization", $"Bot {m_AccessToken}");
             request.AddHeaderField("User-Agent", $"DiscordCorpse (https://github.com/ModuloCorpse/DiscordCorpse, {LibInfo.VERSION})");

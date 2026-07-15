@@ -2,14 +2,12 @@
 using CorpseLib.DataNotation;
 using CorpseLib.Json;
 using CorpseLib.Logging;
-using CorpseLib.Network;
-using CorpseLib.Web;
-using CorpseLib.Web.Http;
+using CorpseLib.Network.WebSocket;
 using System.Text;
 
 namespace DiscordCorpse
 {
-    public class DiscordClientProtocol(DiscordAPI api, DiscordClient client) : WebSocketProtocol
+    public class DiscordClientProtocol(DiscordAPI api, DiscordClient client) : AWebSocketProtocol
     {
         private class GatewayEvent
         {
@@ -207,7 +205,7 @@ namespace DiscordCorpse
             Send(new GatewayEvent(1, m_LastSequenceNumber).ToString());
         }
 
-        protected override void OnWSMessage(string message)
+        public override void HandleMessage(string message)
         {
             string messageWithFragment = m_LastMessageFragment + message;
             DISCORD_GATEWAY.Log($"<= ${messageWithFragment}");
@@ -233,15 +231,14 @@ namespace DiscordCorpse
 
         public void SendMessage(string channelID, DiscordMessage message) => m_API.SendMessageToChannel(channelID, message);
 
-        protected override void OnDiscardException(Exception exception)
+        public override void OnError(Exception exception)
         {
             DISCORD_GATEWAY.Log(exception.ToString());
         }
 
-        protected override void OnWSOpen(Response message)
+        public override void OnOpen()
         {
             DISCORD_GATEWAY.Log("Websocket open");
-            base.OnWSOpen(message);
             if (!string.IsNullOrEmpty(m_SessionID))
             {
                 Send(new GatewayEvent(6, new DataObject()
@@ -255,7 +252,7 @@ namespace DiscordCorpse
             }
         }
 
-        protected override void OnClientDisconnected()
+        public override void OnClose(int status, string message)
         {
             StringBuilder builder = new();
             foreach (string traceLine in Environment.StackTrace.Split('\n'))
@@ -270,12 +267,6 @@ namespace DiscordCorpse
             //TODO Check why action isn't stopped properly
             m_HeartbeatAction?.Stop();
             DISCORD_GATEWAY.Log("Disconnected");
-        }
-
-        protected override void OnWSClose(int status, string message)
-        {
-            //TODO Check why action isn't stopped properly
-            m_HeartbeatAction?.Stop();
             DISCORD_GATEWAY.Log($"[${status}] ${message}");
             if (status == 1001)
                 Reconnect();

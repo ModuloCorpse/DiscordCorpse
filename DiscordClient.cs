@@ -43,7 +43,7 @@ namespace DiscordCorpse
             m_Monitor = monitor;
             TCPAsyncClient discordGatewayClient = new(m_Protocol, URI.Parse(m_API.GetGatewayURL()));
             if (m_Monitor != null)
-                m_Protocol.SetMonitor(m_Monitor);
+                m_Protocol.AddMonitor(m_Monitor);
             discordGatewayClient.Start();
             m_Protocol.OnReconnectionRequested += OnReconnectionRequested;
         }
@@ -57,7 +57,7 @@ namespace DiscordCorpse
             m_Protocol = protocol;
             TCPAsyncClient discordGatewayClient = new(m_Protocol, uri);
             if (m_Monitor != null)
-                m_Protocol.SetMonitor(m_Monitor);
+                m_Protocol.AddMonitor(m_Monitor);
             discordGatewayClient.Start();
             m_Protocol.OnReconnectionRequested += OnReconnectionRequested;
         }
@@ -77,7 +77,7 @@ namespace DiscordCorpse
         public void SetMonitor(IMonitor monitor)
         {
             m_Monitor = monitor;
-            m_Protocol?.SetMonitor(monitor);
+            m_Protocol?.AddMonitor(monitor);
         }
 
         public DiscordChannel GetChannel(string channelID) => m_Protocol.GetChannel(channelID);
