@@ -1,9 +1,9 @@
 ﻿using CorpseLib;
-using CorpseLib.Network;
-using DiscordCorpse.Embed;
-using DiscordCorpse.MessagePart.Text;
-using DiscordCorpse.MessagePart;
 using CorpseLib.DataNotation;
+using CorpseLib.Network.WebSocket;
+using DiscordCorpse.Embed;
+using DiscordCorpse.MessagePart;
+using DiscordCorpse.MessagePart.Text;
 
 namespace DiscordCorpse
 {
@@ -24,47 +24,47 @@ namespace DiscordCorpse
             DataHelper.RegisterSerializer(new DiscordEmbed.DataSerializer());
         }
 
-        public static DiscordClient NewConnection(string clientSecret) => new(clientSecret, null, null);
-        public static DiscordClient NewConnection(string clientSecret, IDiscordHandler discordHandler) => new(clientSecret, discordHandler, null);
-        public static DiscordClient NewConnection(string clientSecret, IMonitor monitor) => new(clientSecret, null, monitor);
-        public static DiscordClient NewConnection(string clientSecret, IDiscordHandler discordHandler, IMonitor monitor) => new(clientSecret, discordHandler, monitor);
+        public static async Task<DiscordClient?> NewConnection(string clientSecret, IDiscordHandler handler)
+        {
+            DiscordClient discordClient = new(clientSecret, handler);
+            WebSocketClient? webSocket = await WebSocketClient.Connect(URI.Parse(discordClient.GatewayURL), discordClient.Protocol);
+            if (webSocket == null)
+                return null;
+            return discordClient;
+        }
 
         private readonly DiscordAPI m_API;
-        private readonly IDiscordHandler? m_DiscordHandler;
+        private readonly IDiscordHandler m_DiscordHandler;
         private readonly Dictionary<string, Operation<DiscordReceivedMessage>> m_AwaitingMessage = [];
         private DiscordClientProtocol m_Protocol;
-        private IMonitor? m_Monitor;
 
-        private DiscordClient(string clientSecret, IDiscordHandler? handler, IMonitor? monitor)
+        internal string GatewayURL => m_API.GetGatewayURL();
+        internal DiscordClientProtocol Protocol => m_Protocol;
+
+        private DiscordClient(string clientSecret, IDiscordHandler handler)
         {
             m_DiscordHandler = handler;
             m_API = new(clientSecret);
             m_Protocol = new(m_API, this);
-            m_Monitor = monitor;
-            TCPAsyncClient discordGatewayClient = new(m_Protocol, URI.Parse(m_API.GetGatewayURL()));
-            if (m_Monitor != null)
-                m_Protocol.AddMonitor(m_Monitor);
-            discordGatewayClient.Start();
             m_Protocol.OnReconnectionRequested += OnReconnectionRequested;
         }
 
-        private void OnReconnectionRequested()
+        private async Task OnReconnectionRequested()
         {
-            m_Protocol.Disconnect();
+            await m_Protocol.Disconnect();
             DiscordClientProtocol protocol = new(m_API, this);
             protocol.SetReconnectionInfo(m_Protocol.SessionID, m_Protocol.LastSequenceNumber);
             URI uri = m_Protocol.URI;
             m_Protocol = protocol;
-            TCPAsyncClient discordGatewayClient = new(m_Protocol, uri);
-            if (m_Monitor != null)
-                m_Protocol.AddMonitor(m_Monitor);
-            discordGatewayClient.Start();
+            WebSocketClient? webSocket = await WebSocketClient.Connect(uri, m_Protocol);
+            if (webSocket == null)
+                return;
             m_Protocol.OnReconnectionRequested += OnReconnectionRequested;
         }
 
-        internal void OnReady() => m_DiscordHandler?.OnReady();
+        internal async Task OnReady() => await m_DiscordHandler.OnReady();
 
-        internal void OnMessageCreate(DiscordReceivedMessage message) => m_DiscordHandler?.OnMessageCreate(message);
+        internal async Task OnMessageCreate(DiscordReceivedMessage message) => await m_DiscordHandler.OnMessageCreate(message);
 
         internal void OnBotMessageCreate(DiscordReceivedMessage message)
         {
@@ -72,13 +72,7 @@ namespace DiscordCorpse
                 operation.SetResult(message);
         }
 
-        public void Disconnect() => m_Protocol.Disconnect();
-        
-        public void SetMonitor(IMonitor monitor)
-        {
-            m_Monitor = monitor;
-            m_Protocol?.AddMonitor(monitor);
-        }
+        public async Task Disconnect() => await m_Protocol.Disconnect();
 
         public DiscordChannel GetChannel(string channelID) => m_Protocol.GetChannel(channelID);
         public void SendMessage(string channelID, DiscordMessage message) => m_Protocol.SendMessage(channelID, message);
@@ -108,8 +102,6 @@ namespace DiscordCorpse
 
         public bool IsConnected() => m_Protocol.IsConnected();
 
-        public void Reconnect() => OnReconnectionRequested();
-
-        public bool IsReconnecting() => m_Protocol.IsReconnecting();
+        public async Task Reconnect() => await OnReconnectionRequested();
     }
 }

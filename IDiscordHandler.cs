@@ -2,7 +2,7 @@
 {
     public interface IDiscordHandler
     {
-        public void OnReady();
-        public void OnMessageCreate(DiscordReceivedMessage message);
+        public Task OnReady();
+        public Task OnMessageCreate(DiscordReceivedMessage message);
     }
 }

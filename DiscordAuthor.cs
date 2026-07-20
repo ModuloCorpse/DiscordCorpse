@@ -64,6 +64,7 @@ namespace DiscordCorpse
             m_ID = id;
             m_GlobalName = globalName;
             m_Discriminator = discriminator;
+            m_AvatarDecorationData = string.Empty;
             m_Avatar = avatar;
             m_PublicFlags = publicFlags;
         }

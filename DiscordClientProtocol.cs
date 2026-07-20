@@ -102,7 +102,7 @@ namespace DiscordCorpse
             AUTO_MODERATION_EXECUTION = 1 << 21
         }
 
-        internal delegate void ReconnectionDelegate();
+        internal delegate Task ReconnectionDelegate();
 
         private readonly DiscordClient m_Client = client;
         private RecurringAction? m_HeartbeatAction;
@@ -135,40 +135,44 @@ namespace DiscordCorpse
             return discordChannel;
         }
 
-        private void HandleReady(DataObject data)
+        private async Task HandleReady(DataObject data)
         {
             DISCORD_GATEWAY.Log($"<=[READY] {JsonParser.NetStr(data)}");
             m_BotUser = data.Get<DiscordUser>("user");
             m_SessionID = data.Get<string>("session_id")!;
             m_URI = URI.Parse(data.Get<string>("resume_gateway_url")!);
-            m_Client?.OnReady();
+            if (m_Client != null)
+                await m_Client.OnReady();
         }
 
-        private void HandleMessageCreate(DataObject data)
+        private async Task HandleMessageCreate(DataObject data)
         {
             DISCORD_GATEWAY.Log($"<=[MESSAGE] {JsonParser.NetStr(data)}");
             DiscordChannel channel = GetChannel(data.Get<string>("channel_id")!);
             DiscordReceivedMessage message = new(m_API, channel, data);
-            if (m_BotUser?.ID != message.Author.ID)
-                m_Client?.OnMessageCreate(message);
-            else
-                m_Client?.OnBotMessageCreate(message);
+            if (m_Client != null)
+            {
+                if (m_BotUser?.ID != message.Author.ID)
+                    await m_Client.OnMessageCreate(message);
+                else
+                    m_Client.OnBotMessageCreate(message);
+            }
         }
 
-        private void HandleDispatch(GatewayEvent receivedEvent)
+        private async Task HandleDispatch(GatewayEvent receivedEvent)
         {
             m_LastSequenceNumber = receivedEvent.SequenceNumber;
             switch (receivedEvent.EventName)
             {
-                case "READY": HandleReady((DataObject)receivedEvent.Data); break;
-                case "MESSAGE_CREATE": HandleMessageCreate((DataObject)receivedEvent.Data); break;
+                case "READY": await HandleReady((DataObject)receivedEvent.Data); break;
+                case "MESSAGE_CREATE": await HandleMessageCreate((DataObject)receivedEvent.Data); break;
                 case "RESUMED": DISCORD_GATEWAY.Log("Resumed"); break;
             }
         }
 
-        private void Identify()
+        private async Task Identify()
         {
-            Send(new GatewayEvent(2, new DataObject()
+            await Send(new GatewayEvent(2, new DataObject()
             {
                 { "token", m_API.Token },
                 { "properties", new DataObject()
@@ -182,30 +186,31 @@ namespace DiscordCorpse
             }).ToString());
         }
 
-        private void HandleHello(GatewayEvent receivedEvent)
+        private async Task HandleHello(GatewayEvent receivedEvent)
         {
             if (receivedEvent.Data is DataObject helloData)
             {
-                m_HeartbeatAction?.Stop();
-                m_HeartbeatAction = new RecurringAction(helloData.Get<int>("heartbeat_interval")!);
+                if (m_HeartbeatAction != null)
+                    await m_HeartbeatAction.Stop();
+                m_HeartbeatAction = new RecurringAction(TimeSpan.FromMilliseconds(helloData.Get<int>("heartbeat_interval")!));
                 m_HeartbeatAction.OnUpdate += Heartbeat;
-                m_HeartbeatAction?.Start();
+                await m_HeartbeatAction.Start();
 
                 if (string.IsNullOrEmpty(m_SessionID))
                 {
-                    Send(new GatewayEvent(1, m_LastSequenceNumber).ToString());
-                    Identify();
+                    await Send(new GatewayEvent(1, m_LastSequenceNumber).ToString());
+                    await Identify();
                 }
             }
         }
 
-        private void Heartbeat(object? sender, EventArgs e)
+        private async Task Heartbeat()
         {
             DISCORD_GATEWAY.Log("=> HeartBeat");
-            Send(new GatewayEvent(1, m_LastSequenceNumber).ToString());
+            await Send(new GatewayEvent(1, m_LastSequenceNumber).ToString());
         }
 
-        public override void HandleMessage(string message)
+        public override async Task OnMessageReceived(string message)
         {
             string messageWithFragment = m_LastMessageFragment + message;
             DISCORD_GATEWAY.Log($"<= ${messageWithFragment}");
@@ -216,10 +221,10 @@ namespace DiscordCorpse
                 GatewayEvent receivedEvent = new(receivedEventJson);
                 switch (receivedEvent.OpCode)
                 {
-                    case 0: HandleDispatch(receivedEvent); break;
-                    case 7: OnReconnectionRequested?.Invoke(); break;
+                    case 0: await HandleDispatch(receivedEvent); break;
+                    case 7: if (OnReconnectionRequested != null) await OnReconnectionRequested(); break;
                     case 9: /* Handle Invalid Session */ break;
-                    case 10: HandleHello(receivedEvent); break;
+                    case 10: await HandleHello(receivedEvent); break;
                     case 11: break; // Heartbeat ACK DISCARDED
                 }
             }
@@ -231,28 +236,29 @@ namespace DiscordCorpse
 
         public void SendMessage(string channelID, DiscordMessage message) => m_API.SendMessageToChannel(channelID, message);
 
-        public override void OnError(Exception exception)
+        public override async Task OnError(Exception exception)
         {
             DISCORD_GATEWAY.Log(exception.ToString());
         }
 
-        public override void OnOpen()
+        public override async Task OnOpen()
         {
             DISCORD_GATEWAY.Log("Websocket open");
             if (!string.IsNullOrEmpty(m_SessionID))
             {
-                Send(new GatewayEvent(6, new DataObject()
+                await Send(new GatewayEvent(6, new DataObject()
                 {
                     { "token", m_API.Token },
                     { "session_id", m_SessionID },
                     { "seq", m_LastSequenceNumber }
                 }).ToString());
-                m_HeartbeatAction?.Start();
+                if (m_HeartbeatAction != null)
+                    await m_HeartbeatAction.Start();
                 DISCORD_GATEWAY.Log("Reconnected");
             }
         }
 
-        public override void OnClose(int status, string message)
+        public override async Task OnClose(int status, string message)
         {
             StringBuilder builder = new();
             foreach (string traceLine in Environment.StackTrace.Split('\n'))
@@ -265,11 +271,12 @@ namespace DiscordCorpse
             DISCORD_GATEWAY.Log(builder.ToString());
 
             //TODO Check why action isn't stopped properly
-            m_HeartbeatAction?.Stop();
+            if (m_HeartbeatAction != null)
+                await m_HeartbeatAction.Stop();
             DISCORD_GATEWAY.Log("Disconnected");
             DISCORD_GATEWAY.Log($"[${status}] ${message}");
             if (status == 1001)
-                Reconnect();
+                await Reconnect();
         }
     }
 }
